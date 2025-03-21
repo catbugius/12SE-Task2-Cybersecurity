@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File</title>
+</head>
+<body>
+    <h2>Upload a File</h2>
+    
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">  <!-- ✅ CSRF Token -->
+        <input type="file" name="file" id="fileInput" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    <script>
+        // List of allowed file extensions
+        const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'txt', 'pdf'];
+
+        document.getElementById("uploadForm").addEventListener("submit", function(event) {
+            event.preventDefault();  // ✅ Prevent normal form submission
+
+            // Get file input element and the selected file
+            let fileInput = document.getElementById("fileInput");
+            let file = fileInput.files[0];
+
+            // Extract file extension and convert to lowercase
+            let fileExtension = file.name.split('.').pop().toLowerCase();
+
+            // Validate the file extension on the client side
+            if (!allowedExtensions.includes(fileExtension)) {
+                alert("Invalid file type. Only image and document files are allowed.");
+                return;  // Prevent form submission
+            }
+
+            // If valid, submit the form via AJAX
+            let formData = new FormData(this);
+            let csrfToken = document.querySelector("[name=csrf_token]").value;  // ✅ Get CSRF Token
+
+            fetch("/upload", {
+                method: "POST",
+                headers: { "X-CSRFToken": csrfToken  },  // Include CSRF Token
+                body: formData
+            })
+            .then(response => {
+            if (response.ok) {
+                return response.text();  // Success
+            } 
+            else {
+                return response.text().then(errorText => {  // Error
+                    throw new Error(errorText);
+                });
+                }
+                    })
+            .then(data => {
+                // Show success message
+                alert("Upload successful!");
+            })
+            .catch(error => {
+                // Handle error response (e.g., file already exists or other errors)
+                alert("Error: " + error);
+            });
+        });
+    </script>
+</body>
+</html>
